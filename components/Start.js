@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
 /*import components from react-native*/
-import { View, Text, TextInput, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ImageBackground, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 
 export default class Start extends Component {
   constructor(props) {
@@ -45,6 +45,8 @@ export default class Start extends Component {
             onPress={() => this.props.navigation.navigate('Chat', { name: this.state.name, color: this.state.color })}>
             <Text style={styles.buttonText}>Start Chatting</Text>
           </TouchableOpacity>
+          {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null
+          }
         </View>
       </ImageBackground >
     )
