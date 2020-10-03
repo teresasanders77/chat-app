@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
-import { GiftedChat, Bubble } from 'react-native-gifted-chat';
+import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import { View, StyleSheet, Platform, KeyboardAvoidingView, } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 
 const firebase = require('firebase');
 require('firebase/firestore');
@@ -30,8 +32,8 @@ export default class Chat extends Component {
 
     this.state = {
       messages: [],
-      uid: 0,
       isConnected: false,
+      uid: 0,
       user: {
         _id: '',
         name: '',
@@ -40,8 +42,52 @@ export default class Chat extends Component {
     };
   }
 
+  async getMessages() {
+    let messages = '';
+    try {
+      messages = await AsyncStorage.getItem('messages') || [];
+      this.setState({
+        messages: JSON.parse(messages)
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  async saveMessages() {
+    try {
+      await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+
+  async deleteMessages() {
+    try {
+      await AsyncStorage.removeItem('messages');
+      this.setState({
+        messages: []
+      })
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
   componentDidMount() {
     this._isMounted = true;
+    this.getMessages();
+    NetInfo.fetch().then(state => {
+      if (state.isConnected) {
+        console.log('online');
+      } else {
+        console.log('offline');
+        this.setState({
+          isConnected: false
+        })
+      }
+    });
+    this.getMessages();
     this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) {
         await firebase.auth().signInAnonymously();
@@ -49,6 +95,7 @@ export default class Chat extends Component {
 
       //update user state with currently active user data
       this.setState({
+        isConnected: true,
         user: {
           _id: user.uid,
           name: this.props.route.params.name
@@ -106,6 +153,7 @@ export default class Chat extends Component {
     }),
       () => {
         this.addMessages();
+        this.saveMessages();
       });
   }
 
@@ -122,6 +170,17 @@ export default class Chat extends Component {
     );
   }
 
+  renderInputToolbar(props) {
+    if (this.state.isConnected == false) {
+    } else {
+      return (
+        <InputToolbar
+          {...props}
+        />
+      );
+    }
+  }
+
   render() {
     /*name and color must be passed as props from Start.js*/
     let name = this.props.route.params.name;
@@ -135,6 +194,7 @@ export default class Chat extends Component {
     return (
       <View style={[styles.body, { backgroundColor: color }]}>
         <GiftedChat
+          renderInputToolbar={this.renderInputToolbar.bind(this)}
           renderBubble={this.renderBubble.bind(this)}
           messages={this.state.messages}
           onSend={messages => this.onSend(messages)}
