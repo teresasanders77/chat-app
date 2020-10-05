@@ -27,18 +27,12 @@ export default class Chat extends Component {
       });
     }
 
-    this.referenceMessageUser = null;
     this.referenceMessages = firebase.firestore().collection('messages');
 
     this.state = {
       messages: [],
       isConnected: false,
       uid: 0,
-      user: {
-        _id: '',
-        name: '',
-        avatar: ''
-      },
     };
   }
 
@@ -75,41 +69,47 @@ export default class Chat extends Component {
   }
 
   componentDidMount() {
-    this._isMounted = true;
+    NetInfo.addEventListener(state => {
+      this.handleConnectivityChange(state)
+    })
+
     NetInfo.fetch().then(state => {
-      if (state.isConnected) {
-        console.log('online');
+      const isConnected = state.isConnected;
+      if (isConnected) {
+        this.setState({
+          isConnected: true,
+        });
+
+        this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+          if (!user) {
+            await firebase.auth().signInAnonymously();
+          }
+
+          //update user state with currently active user data
+          this.setState({
+            uid: user.uid,
+            messages: []
+          });
+          this.unsubscribe = this.referenceMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
+        });
       } else {
-        console.log('offline');
         this.setState({
           isConnected: false
-        })
+        });
+        this.getMessages();
       }
-    });
-    this.getMessages();
-    this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) {
-        await firebase.auth().signInAnonymously();
-      }
-
-      //update user state with currently active user data
-      this.setState({
-        isConnected: true,
-        user: {
-          _id: user.uid,
-          name: this.props.route.params.name
-        },
-        loggedInText: 'Hello' + this.props.route.params.name + '!'
-      });
-      this.unsubscribe = this.referenceMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
     });
   }
 
   componentWillUnmount() {
-    this._isMounted = false;
     this.authUnsubscribe();
     this.unsubscribe();
-  }
+
+    NetInfo.isConnected.removeEventListener(
+      'connectionChange',
+      this.handleConnectivityChange
+    );
+  };
 
   onCollectionUpdate = (querySnapshot) => {
     const messages = [];
@@ -131,6 +131,20 @@ export default class Chat extends Component {
     this.setState({
       messages,
     });
+  };
+
+  handleConnectivityChange = (state) => {
+    const isConnected = state.isConnected;
+    if (isConnected == true) {
+      this.setState({
+        isConnected: true
+      });
+      this.unsubscribe = this.referenceChatMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
+    } else {
+      this.setState({
+        isConnected: false
+      });
+    }
   };
 
   /*add messages to firebase database*/
@@ -170,7 +184,8 @@ export default class Chat extends Component {
   }
 
   renderInputToolbar(props) {
-    if (this.state.isConnected == false) {
+    console.log('renderInputToolbar --> props', props.isConnected);
+    if (props.isConnected === false) {
     } else {
       return (
         <InputToolbar
@@ -193,7 +208,8 @@ export default class Chat extends Component {
     return (
       <View style={[styles.body, { backgroundColor: color }]}>
         <GiftedChat
-          renderInputToolbar={this.renderInputToolbar.bind(this)}
+          isConnected={this.state.isConnected}
+          renderInputToolbar={this.renderInputToolbar}
           renderBubble={this.renderBubble.bind(this)}
           messages={this.state.messages}
           onSend={messages => this.onSend(messages)}
