@@ -27,12 +27,18 @@ export default class Chat extends Component {
       });
     }
 
+    this.referenceMessageUser = null;
     this.referenceMessages = firebase.firestore().collection('messages');
 
     this.state = {
       messages: [],
       isConnected: false,
       uid: 0,
+      user: {
+        _id: '',
+        name: '',
+        avatar: ''
+      },
     };
   }
 
@@ -70,8 +76,8 @@ export default class Chat extends Component {
 
   componentDidMount() {
     NetInfo.addEventListener(state => {
-      this.handleConnectivityChange(state)
-    })
+      this.handleConnectivityChange(state);
+    });
 
     NetInfo.fetch().then(state => {
       const isConnected = state.isConnected;
@@ -102,14 +108,14 @@ export default class Chat extends Component {
   }
 
   componentWillUnmount() {
-    this.authUnsubscribe();
     this.unsubscribe();
+    this.authUnsubscribe();
 
     NetInfo.isConnected.removeEventListener(
       'connectionChange',
       this.handleConnectivityChange
     );
-  };
+  }
 
   onCollectionUpdate = (querySnapshot) => {
     const messages = [];
@@ -133,13 +139,15 @@ export default class Chat extends Component {
     });
   };
 
-  handleConnectivityChange = (state) => {
+  handleConnectivityChange = state => {
     const isConnected = state.isConnected;
     if (isConnected == true) {
       this.setState({
         isConnected: true
       });
-      this.unsubscribe = this.referenceChatMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
+      this.unsubscribe = this.referenceMessages
+        .orderBy("createdAt", "desc")
+        .onSnapshot(this.onCollectionUpdate);
     } else {
       this.setState({
         isConnected: false
