@@ -10,7 +10,7 @@ require('firebase/firestore');
 
 export default class Chat extends Component {
 
-  /*state initialization*/
+  //state initialization
   constructor() {
     super();
 
@@ -42,6 +42,7 @@ export default class Chat extends Component {
     };
   }
 
+  //loads messages from AsyncStorage
   async getMessages() {
     let messages = '';
     try {
@@ -54,6 +55,7 @@ export default class Chat extends Component {
     }
   };
 
+  //saves all messages from AsyncStorage
   async saveMessages() {
     try {
       await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
@@ -62,7 +64,7 @@ export default class Chat extends Component {
     }
   }
 
-
+  //deletes messages from AsyncStorage
   async deleteMessages() {
     try {
       await AsyncStorage.removeItem('messages');
@@ -74,6 +76,7 @@ export default class Chat extends Component {
     }
   }
 
+  //NetInfo is implemented to check the current network status of
   componentDidMount() {
     NetInfo.addEventListener(state => {
       this.handleConnectivityChange(state);
@@ -111,10 +114,7 @@ export default class Chat extends Component {
     this.unsubscribe();
     this.authUnsubscribe();
 
-    NetInfo.isConnected.removeEventListener(
-      'connectionChange',
-      this.handleConnectivityChange
-    );
+
   }
 
   onCollectionUpdate = (querySnapshot) => {
@@ -139,6 +139,7 @@ export default class Chat extends Component {
     });
   };
 
+  //function to check the networkstatus of the user
   handleConnectivityChange = state => {
     const isConnected = state.isConnected;
     if (isConnected == true) {
@@ -155,7 +156,7 @@ export default class Chat extends Component {
     }
   };
 
-  /*add messages to firebase database*/
+  //add messages to firebase database
   addMessages() {
     console.log(this.state.user)
     this.referenceMessages.add({
@@ -167,7 +168,7 @@ export default class Chat extends Component {
     });
   }
 
-  /*this is called when a user sends a message*/
+  //this is called when a user sends a message
   onSend(messages = []) {
     this.setState(previousState => ({
       messages: GiftedChat.append(previousState.messages, messages),
@@ -191,6 +192,7 @@ export default class Chat extends Component {
     );
   }
 
+  //hides toolbar if user is offline 
   renderInputToolbar(props) {
     console.log('renderInputToolbar --> props', props.isConnected);
     if (props.isConnected === false) {
@@ -204,15 +206,15 @@ export default class Chat extends Component {
   }
 
   render() {
-    /*name and color must be passed as props from Start.js*/
+    //name and color must be passed as props from Start.js
     let name = this.props.route.params.name;
     let color = this.props.route.params.color;
 
-    /*sets the title*/
+    //sets the title
     this.props.navigation.setOptions({ title: name })
 
-    /*renders chat interface*/
-    /*fix for Android keyboard placement*/
+    /*renders chat interface
+    fix for Android keyboard placement*/
     return (
       <View style={[styles.body, { backgroundColor: color }]}>
         <GiftedChat
@@ -230,7 +232,7 @@ export default class Chat extends Component {
   }
 }
 
-/*styling*/
+//styling
 const styles = StyleSheet.create({
   body: {
     flex: 1,
