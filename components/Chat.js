@@ -3,10 +3,12 @@ import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import { View, StyleSheet, Platform, KeyboardAvoidingView, } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
+import { YellowBox } from 'react-native';
 
 const firebase = require('firebase');
 require('firebase/firestore');
-
 
 export default class Chat extends Component {
 
@@ -27,18 +29,18 @@ export default class Chat extends Component {
       });
     }
 
-    this.referenceMessageUser = null;
     this.referenceMessages = firebase.firestore().collection('messages');
 
     this.state = {
       messages: [],
-      isConnected: false,
-      uid: 0,
       user: {
         _id: '',
         name: '',
-        avatar: ''
+        avatar: '',
       },
+      isConnected: false,
+      image: null,
+      location: null,
     };
   }
 
@@ -78,6 +80,8 @@ export default class Chat extends Component {
 
   //NetInfo is implemented to check the current network status of
   componentDidMount() {
+    this._isMounted = true;
+    YellowBox.ignoreWarnings(['Animated.event', 'Animated: `useNativeDriver` was not specified.']);
     NetInfo.addEventListener(state => {
       this.handleConnectivityChange(state);
     });
@@ -96,8 +100,10 @@ export default class Chat extends Component {
 
           //update user state with currently active user data
           this.setState({
-            uid: user.uid,
-            messages: []
+            user: {
+              _id: user.uid,
+              messages: []
+            }
           });
           this.unsubscribe = this.referenceMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
         });
@@ -111,6 +117,7 @@ export default class Chat extends Component {
   }
 
   componentWillUnmount() {
+    this._isMounted = false;
     this.unsubscribe();
     this.authUnsubscribe();
 
@@ -127,6 +134,8 @@ export default class Chat extends Component {
         _id: data._id,
         text: data.text.toString(),
         createdAt: data.createdAt.toDate(),
+        image: data.image || '',
+        location: data.location,
         user: {
           _id: data.user._id,
           name: data.user.name,
@@ -157,16 +166,18 @@ export default class Chat extends Component {
   };
 
   //add messages to firebase database
-  addMessages() {
-    console.log(this.state.user)
+  addMessages = () => {
+    const message = this.state.messages[0];
     this.referenceMessages.add({
-      _id: this.state.messages[0]._id,
-      text: this.state.messages[0].text || '',
-      createdAt: this.state.messages[0].createdAt,
-      user: this.state.user,
-      uid: this.state.uid,
+      _id: message._id,
+      text: message.text || '',
+      createdAt: message.createdAt,
+      user: message.user,
+      image: message.image || '',
+      location: message.location || null,
+      sent: true,
     });
-  }
+  };
 
   //this is called when a user sends a message
   onSend(messages = []) {
@@ -205,6 +216,36 @@ export default class Chat extends Component {
     }
   }
 
+  //reners pickImage, takePhoto and getLocation
+  renderCustomActions = (props) => {
+    return <CustomActions {...props} />;
+  };
+
+  renderCustomView(props) {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return (
+        <View>
+          <MapView
+            style={{
+              width: 150,
+              height: 100,
+              borderRadius: 13,
+              margin: 3
+            }}
+            region={{
+              latitude: currentMessage.location.latitude,
+              longitude: currentMessage.location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          />
+        </View>
+      );
+    }
+    return null;
+  }
+
   render() {
     //name and color must be passed as props from Start.js
     let name = this.props.route.params.name;
@@ -217,10 +258,18 @@ export default class Chat extends Component {
     fix for Android keyboard placement*/
     return (
       <View style={[styles.body, { backgroundColor: color }]}>
+        {this.state.image && (
+          <Image
+            source={{ uri: this.state.image.uri }}
+            style={{ width: 200, height: 200 }}
+          />
+        )}
         <GiftedChat
           isConnected={this.state.isConnected}
           renderInputToolbar={this.renderInputToolbar}
+          renderCustomView={this.renderCustomView}
           renderBubble={this.renderBubble.bind(this)}
+          renderActions={this.renderCustomActions}
           messages={this.state.messages}
           onSend={messages => this.onSend(messages)}
           user={this.state.user}
