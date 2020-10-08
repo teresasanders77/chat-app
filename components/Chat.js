@@ -44,8 +44,20 @@ export default class Chat extends Component {
     };
   }
 
+  //default function parameters to be used if the user is unspecified or undefined
+  setUser = (_id, name = 'Guest User', avatar = 'https://placeimg.com/140/140/people') => {
+    this.setState({
+      user: {
+        _id: _id,
+        name: name,
+        avatar: avatar,
+      }
+    })
+  }
+
+  //ES6 arrow functions implemeted 
   //loads messages from AsyncStorage
-  async getMessages() {
+  getMessages = async () => {
     let messages = '';
     try {
       messages = await AsyncStorage.getItem('messages') || [];
@@ -58,7 +70,7 @@ export default class Chat extends Component {
   };
 
   //saves all messages from AsyncStorage
-  async saveMessages() {
+  saveMessages = async () => {
     try {
       await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
     } catch (error) {
@@ -67,7 +79,7 @@ export default class Chat extends Component {
   }
 
   //deletes messages from AsyncStorage
-  async deleteMessages() {
+  deleteMessages = async () => {
     try {
       await AsyncStorage.removeItem('messages');
       this.setState({
@@ -99,12 +111,25 @@ export default class Chat extends Component {
           }
 
           //update user state with currently active user data
-          this.setState({
-            user: {
-              _id: user.uid,
-              messages: []
-            }
-          });
+          if (!this.props.route.params.name) {
+            this.setUser(user.uid);
+            this.setState({
+              user: {
+                _id: user.uid,
+                messages: []
+              },
+              loggedInText: 'Hello!'
+            });
+          } else {
+            this.setUser(user.uid, this.props.route.params.name)
+            this.setState({
+              user: {
+                _id: user.uid,
+                messages: []
+              },
+              loggedInText: 'Hello!'
+            });
+          }
           this.unsubscribe = this.referenceMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
         });
       } else {
@@ -129,7 +154,7 @@ export default class Chat extends Component {
     // go through each document
     querySnapshot.forEach((doc) => {
       // get the QueryDocumentSnapshot's data
-      var data = doc.data();
+      let data = doc.data();
       messages.push({
         _id: data._id,
         text: data.text.toString(),
@@ -180,7 +205,7 @@ export default class Chat extends Component {
   };
 
   //this is called when a user sends a message
-  onSend(messages = []) {
+  onSend = (messages = []) => {
     this.setState(previousState => ({
       messages: GiftedChat.append(previousState.messages, messages),
     }),
@@ -190,7 +215,7 @@ export default class Chat extends Component {
       });
   }
 
-  renderBubble(props) {
+  renderBubble = (props) => {
     return (
       <Bubble
         {...props}
@@ -204,7 +229,7 @@ export default class Chat extends Component {
   }
 
   //hides toolbar if user is offline 
-  renderInputToolbar(props) {
+  renderInputToolbar = (props) => {
     console.log('renderInputToolbar --> props', props.isConnected);
     if (props.isConnected === false) {
     } else {

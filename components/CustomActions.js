@@ -11,30 +11,39 @@ const firebase = require('firebase');
 export default class CustomActions extends React.Component {
 
   pickImage = async () => {
-    //requests permission to access photos 
-    const { status } = await Permissions.askAsync(Permissions.CAMERA_ROLL);
-    if (status === 'granted') {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'Images',
-      }).catch(error => console.log(error));
+    //try-catch statements used in async functions 
+    try {
+      //requests permission to access photos 
+      const { status } = await Permissions.askAsync(Permissions.CAMERA_ROLL);
+      if (status === 'granted') {
+        let result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: 'Images',
+        }).catch(error => console.log(error));
 
-      if (!result.cancelled) {
-        const imageUrl = await this.uploadImage(result.uri);
-        this.props.onSend({ image: imageUrl })
-      };
+        if (!result.cancelled) {
+          const imageUrl = await this.uploadImage(result.uri);
+          this.props.onSend({ image: imageUrl })
+        };
+      }
+    } catch (error) {
+      console.log(error.message)
     }
   }
 
   takePhoto = async () => {
-    //requests permission to access camera
-    const { status } = await Permissions.askAsync(Permissions.CAMERA_ROLL, Permissions.CAMERA);
-    if (status === 'granted') {
-      let result = await ImagePicker.launchCameraAsync().catch(error => console.log(error));
+    try {
+      //requests permission to access camera
+      const { status } = await Permissions.askAsync(Permissions.CAMERA_ROLL, Permissions.CAMERA);
+      if (status === 'granted') {
+        let result = await ImagePicker.launchCameraAsync().catch(error => console.log(error));
 
-      if (!result.cancelled) {
-        const imageUrl = await this.uploadImage(result.uri);
-        this.props.onSend({ image: imageUrl })
-      };
+        if (!result.cancelled) {
+          const imageUrl = await this.uploadImage(result.uri);
+          this.props.onSend({ image: imageUrl })
+        };
+      }
+    } catch (error) {
+      console.log(error.message)
     }
   }
 
@@ -53,10 +62,10 @@ export default class CustomActions extends React.Component {
       xhr.open('GET', uri, true);
       xhr.send(null);
     });
-
     let uriParts = uri.split('/')
     let imageName = uriParts[uriParts.length - 1]
 
+    //template literal string used for imageName
     const ref = firebase.storage().ref().child(`${imageName}`);
     const snapshot = await ref.put(blob);
     blob.close();
@@ -64,19 +73,23 @@ export default class CustomActions extends React.Component {
   }
 
   getLocation = async () => {
-    //requests permission to access location
-    const { status } = await Permissions.askAsync(Permissions.LOCATION);
-    if (status === 'granted') {
-      let result = await Location.getCurrentPositionAsync({}).catch(error => console.log(error));
+    try {
+      //requests permission to access location
+      const { status } = await Permissions.askAsync(Permissions.LOCATION);
+      if (status === 'granted') {
+        let result = await Location.getCurrentPositionAsync({}).catch(error => console.log(error));
 
-      if (result) {
-        this.props.onSend({
-          location: {
-            longitude: result.coords.longitude,
-            latitude: result.coords.latitude,
-          },
-        })
+        if (result) {
+          this.props.onSend({
+            location: {
+              longitude: result.coords.longitude,
+              latitude: result.coords.latitude,
+            },
+          })
+        }
       }
+    } catch (error) {
+      console.log(error)
     }
   }
 
