@@ -10,12 +10,36 @@ import { YellowBox } from 'react-native';
 const firebase = require('firebase');
 require('firebase/firestore');
 
+/**
+* @class Chat
+* @requires React
+* @requires React-native
+* @requires react-native-gifted-chat
+* @requires react-native-community/async-storage
+* @requires react-native-community/netinfo
+* @requires CustomActions from './CustomActions'
+* @requires react-native-maps
+* @requires firebase
+* @requires firestore
+*/
+
 export default class Chat extends Component {
 
   //state initialization
   constructor() {
     super();
 
+    /**
+    * firestore credentials
+    * @param {string} apiKey
+    * @param {string} authDomain
+    * @param {string} databaseURL
+    * @param {string} projectId
+    * @param {string} storageBucket
+    * @param {string} messageSenderId
+    * @param {string} appId
+    * @param {string} measurementId
+    */
     if (!firebase.apps.length) {
       firebase.initializeApp({
         apiKey: "AIzaSyDLWiulz2O4G7vsUyqcSbhmmQzdSIImLAM",
@@ -44,7 +68,13 @@ export default class Chat extends Component {
     };
   }
 
-  //default function parameters to be used if the user is unspecified or undefined
+  /**
+  * default function parameters to be used if the user is unspecified or undefined
+  * @function setUser
+  * @param {string} _id
+  * @param {string} name
+  * @param {string} avatar
+  */
   setUser = (_id, name = 'Guest User', avatar = 'https://placeimg.com/140/140/people') => {
     this.setState({
       user: {
@@ -55,8 +85,13 @@ export default class Chat extends Component {
     })
   }
 
-  //ES6 arrow functions implemeted 
-  //loads messages from AsyncStorage
+  /**
+   * loads messages from AsyncStorage
+   * @function getMessages
+   * @async
+   * @return {Promise<string>}  The data from the storage 
+   */
+
   getMessages = async () => {
     let messages = '';
     try {
@@ -69,7 +104,12 @@ export default class Chat extends Component {
     }
   };
 
-  //saves all messages from AsyncStorage
+  /**
+ * saves messages from AsyncStorage
+ * @function saveMessages
+ * @async
+ * @return {Promise<AsyncStorage>} message in AsyncStorage
+ */
   saveMessages = async () => {
     try {
       await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
@@ -78,7 +118,12 @@ export default class Chat extends Component {
     }
   }
 
-  //deletes messages from AsyncStorage
+  /**
+ *deletes messages from AsyncStorage
+ *@function deleteMessages
+ * @async
+
+ */
   deleteMessages = async () => {
     try {
       await AsyncStorage.removeItem('messages');
@@ -153,6 +198,16 @@ export default class Chat extends Component {
 
   }
 
+  /**
+  * Updates collection, sets new messages state
+  * @function onCollectionUpdate
+  * @param {string} _id
+  * @param {string} text 
+  * @param {date} createdAt 
+  * @param {string} imageUri
+  * @param {number} location
+  * @param {object} userData
+  */
   onCollectionUpdate = (querySnapshot) => {
     const messages = [];
     // go through each document
@@ -194,7 +249,17 @@ export default class Chat extends Component {
     }
   };
 
-  //add messages to firebase database
+  /**
+  * add messages to firebase database
+  * @function addMessages
+  * @param {string} _id
+  * @param {string} text 
+  * @param {date} createdAt 
+  * @param {string} user
+  * @param {string} imageUri
+  * @param {number} location
+  * @param {boolean} sent 
+  */
   addMessages = () => {
     const message = this.state.messages[0];
     this.referenceMessages.add({
@@ -208,7 +273,12 @@ export default class Chat extends Component {
     });
   };
 
-  //this is called when a user sends a message
+  /**
+  * this is called when a user sends a message
+  * @function onSend
+  * @param {*} messages 
+  * @returns {state} updates state with message
+  */
   onSend = (messages = []) => {
     this.setState(previousState => ({
       messages: GiftedChat.append(previousState.messages, messages),
@@ -219,6 +289,12 @@ export default class Chat extends Component {
       });
   }
 
+  /**
+  * renders chat bubble
+  * @function renderBubble 
+  * @param {*} props 
+  * @returns {Bubble} 
+  */
   renderBubble = (props) => {
     return (
       <Bubble
@@ -232,7 +308,12 @@ export default class Chat extends Component {
     );
   }
 
-  //hides toolbar if user is offline 
+  /**
+  * renders toolbar, hides it if user is offline  
+  * @function renderInputToolbar
+  * @param {*} props 
+  * @returns {InputToolbar} 
+  */
   renderInputToolbar = (props) => {
     console.log('renderInputToolbar --> props', props.isConnected);
     if (props.isConnected === false) {
@@ -245,11 +326,22 @@ export default class Chat extends Component {
     }
   }
 
-  //reners pickImage, takePhoto and getLocation
+  /**
+  * renders pickImage, takePhoto and getLocation 
+  * @function renderCustomActions
+  * @param {*} props 
+  * @returns {CustomActions} 
+  */
   renderCustomActions = (props) => {
     return <CustomActions {...props} />;
   };
 
+  /**
+  * renders CustomView  
+  * @function renderCustomView
+  * @param {*} props 
+  * @returns {MapView} 
+  */
   renderCustomView(props) {
     const { currentMessage } = props;
     if (currentMessage.location) {
@@ -283,8 +375,7 @@ export default class Chat extends Component {
     //sets the title
     this.props.navigation.setOptions({ title: name })
 
-    /*renders chat interface
-    fix for Android keyboard placement*/
+    //renders chat interface
     return (
       <View style={[styles.body, { backgroundColor: color }]}>
         {this.state.image && (

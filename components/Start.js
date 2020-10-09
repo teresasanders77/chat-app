@@ -3,6 +3,12 @@ import React, { Component } from 'react';
 /*import components from react-native*/
 import { View, Text, TextInput, StyleSheet, ImageBackground, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 
+/**
+* @class Start
+* @requires React
+* @requires React-native
+*/
+
 export default class Start extends Component {
   constructor(props) {
     super(props);
