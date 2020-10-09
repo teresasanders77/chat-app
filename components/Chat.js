@@ -107,7 +107,11 @@ export default class Chat extends Component {
 
         this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
           if (!user) {
-            await firebase.auth().signInAnonymously();
+            try {
+              await firebase.auth().signInAnonymously();
+            } catch (error) {
+              console.log(error.message)
+            }
           }
 
           //update user state with currently active user data
