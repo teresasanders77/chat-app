@@ -1,8 +1,8 @@
 # chat-app
 This is a chat app for mobile devices using React Native. The app provdes users with a chat interface and the possibility to share images and their location. 
 
-![Home Screen](homeScreen.png)
-![Chat Screen](chatScreen.png)
+![Home Screen](https://github.com/teresasanders77/chat-app/blob/master/homeScreen.PNG)
+![Chat Screen](https://github.com/teresasanders77/chat-app/blob/master/chatScreen.PNG)
 
 ## Key Features
 * A page where users can enter their name and choose a background color for the chat
